@@ -346,9 +346,34 @@ class SVM:
 
         return sum(sum(self.train_results * self.element_svm_positive_cost(k, b) + (1 - self.train_results) * self.element_svm_negative_cost(k, b))) / self.train_results.shape[0] + weights_cost
 
-    def svm_gradient(self):
-        return 0
+    def svm_gradient(self, k, b):
+        m = pd.Series((self.train_results * self.element_svm_positive_cost(k, b) + (1 - self.train_results) * self.element_svm_negative_cost(k, b)).flatten())
+        derivative = pd.Series(np.zeros([self.train_results.shape[0]]))
+        h = pd.DataFrame({"Costs": m, "Results": pd.Series(self.train_results.flatten()), "Derivative": derivative})
 
-    def svm_gradient_descent(self, k, b, threshold):
+        h["Derivative"][(h.Costs != 0.0) & (h.Results == 0.0)] = k
+        h["Derivative"][(h.Costs != 0.0) & (h.Results == 1.1)] = -k
+
+        k = np.reshape(np.array(h.Derivative), [self.train_data.shape[0], 1])
+        return np.transpose(np.matmul(np.transpose(k), self.similarities))
+
+    def svm_gradient_descent(self, k, b, threshold, alpha):
+        print(self.regularised_svm_cost(k, b))
         while self.regularised_svm_cost(k, b) > threshold:
-            self.weights -= 0
+            self.weights -= self.svm_gradient(k, b) * alpha / self.train_data.shape[0]
+            self.hypothesis = np.matmul(self.similarities, self.weights)
+            print(self.regularised_svm_cost(k, b))
+
+        # results = pd.DataFrame({"Hypothesis": pd.Series(self.hypothesis.flatten()), "Result": pd.Series(np.zeros([self.hypothesis.shape[0]]))})
+        # results.Result[results.Hypothesis >= 1] = 1
+        n = 0
+        for i in range(self.hypothesis.shape[0]):
+
+            if self.hypothesis[i][0] >= 1 and self.train_results[i][0] == 1.0:
+                n += 1
+            elif self.hypothesis[i][0] < 1 and self.train_results[i][0] == 0.0:
+                n += 1
+
+        print(n/self.train_results.shape[0])
+
+

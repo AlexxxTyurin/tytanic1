@@ -79,12 +79,15 @@ if __name__ == "__main__":
     landmark = np.array([train_data[i, :] for i in range(train_data.shape[0]) for _ in range(train_data.shape[0])])
 
     # Secondly, we calculate the similarities vector and then we reshape it
-    similarities = np.array([sum(np.exp(((data[i, :] - landmark[i, :]) ** 2) / (-2 * 4))) for i in range(data.shape[0])])
+    similarities = np.array([sum(np.exp(((data[i, :] - landmark[i, :]) ** 2) / (-2 * 1))) for i in range(data.shape[0])])
     similarities = np.reshape(similarities, [train_data.shape[0], train_data.shape[0]])
 
     a = SVM(train_data, test_data, train_results, test_results, weights, similarities)
     # print(a.hypothesis)
-    print(a.regularised_svm_cost(3, 3))
+
+    a.svm_gradient_descent(3, 3, 3, 0.000002)
+
+
 
 
 
